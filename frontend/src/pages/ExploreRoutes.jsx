@@ -1,77 +1,168 @@
 import { Spinner } from 'flowbite-react';
-import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import SearchSidebar from '../components/SearchSidebar';
-import RouteCard from '../components/RouteCard';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import RouteFeedCard from '../components/RouteFeedCard';
+import RouteFeedCardSkeleton from '../components/RouteFeedCardSkeleton';
+import FilterPanel from '../components/FilterPanel';
 
-const fadeInStyle = `
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.fade-in {
-  animation: fadeIn 1s ease-in forwards;
-}
-`;
+const FEED_BATCH_SIZE = 5;
+const FALLBACK_COVER =
+    'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80';
 
 export default function ExploreRoutes() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [routes, setRoutes] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [showMore, setShowMore] = useState(false);
-    const urlParams = new URLSearchParams(location.search);
+    const urlParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const searchTerm = urlParams.get('searchTerm') || '';
     const order = urlParams.get('order') || 'desc';
     const tag = urlParams.get('tag') || '';
 
+    const [routes, setRoutes] = useState([]);
+    const [highlightRoutes, setHighlightRoutes] = useState([]);
+    const [suggestedCreators, setSuggestedCreators] = useState([]);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [feedError, setFeedError] = useState(null);
+
+    const routesRef = useRef([]);
+    const sentinelRef = useRef(null);
+    const hasMoreRef = useRef(hasMore);
+    const fetchingRef = useRef(false);
+
     useEffect(() => {
-        // Add the styles to the document
-        const styleSheet = document.createElement("style");
-        styleSheet.innerText = fadeInStyle;
-        document.head.appendChild(styleSheet);
+        routesRef.current = routes;
+    }, [routes]);
 
-        return () => {
-            // Cleanup: remove the style when component unmounts
-            document.head.removeChild(styleSheet);
-        };
-    }, []);
+    useEffect(() => {
+        hasMoreRef.current = hasMore;
+    }, [hasMore]);
 
-    const fetchRoutes = async () => {
-        setLoading(true);
+    const fetchRoutes = useCallback(async ({ reset = false } = {}) => {
+        if (!reset && (!hasMoreRef.current || fetchingRef.current)) return;
+
+        const params = new URLSearchParams(location.search);
+        const startIndex = reset ? 0 : routesRef.current.length;
+        params.set('startIndex', startIndex.toString());
+        params.set('limit', FEED_BATCH_SIZE.toString());
+
         try {
-            const res = await fetch(`/api/routes?${urlParams.toString()}`);
-            if (!res.ok) {
-                setLoading(false);
-                return;
+            fetchingRef.current = true;
+            if (reset) {
+                setIsInitialLoading(true);
+                setFeedError(null);
+            } else {
+                setIsFetchingMore(true);
             }
-            if (res.ok) {
-                const data = await res.json();
-                setRoutes(data.routes || []);
-                setLoading(false);
-                setShowMore((data.routes || []).length === 9);
+
+            const res = await fetch(`/api/routes?${params.toString()}`);
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.message || 'Rotalar yüklenemedi');
+            }
+
+            const nextRoutes = data.routes || [];
+            setRoutes((prev) => (reset ? nextRoutes : [...prev, ...nextRoutes]));
+
+            const loaded = startIndex + nextRoutes.length;
+            const total = data.totalRoutes ?? null;
+            
+            // Eğer total bilgisi varsa onu kullan, yoksa gelen route sayısına göre karar ver
+            if (total !== null) {
+                // Total bilgisi varsa, yüklenen sayı total'den azsa ve gelen route sayısı batch size'a eşitse daha fazla var
+                const canLoadMore = loaded < total && nextRoutes.length === FEED_BATCH_SIZE;
+                setHasMore(canLoadMore);
+            } else {
+                // Total bilgisi yoksa, gelen route sayısına göre karar ver
+                // Eğer gelen route sayısı batch size'dan azsa, bu son batch demektir
+                const canLoadMore = nextRoutes.length === FEED_BATCH_SIZE;
+                setHasMore(canLoadMore);
             }
         } catch (error) {
-            console.error('Error fetching routes:', error);
-            setLoading(false);
+            setFeedError(error.message || 'Rotalar yüklenemedi');
+            if (reset) {
+                setRoutes([]);
+            }
+            setHasMore(false);
+        } finally {
+            if (reset) {
+                setIsInitialLoading(false);
+            } else {
+                setIsFetchingMore(false);
+            }
+            fetchingRef.current = false;
         }
-    };
+    }, [location.search]);
 
     useEffect(() => {
-        fetchRoutes();
-    }, [location.search]);
+        setRoutes([]);
+        setHasMore(true);
+        fetchRoutes({ reset: true });
+    }, [location.search, fetchRoutes]);
+
+    useEffect(() => {
+        const node = sentinelRef.current;
+        if (!node) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting && hasMoreRef.current && !fetchingRef.current) {
+                    fetchRoutes({ reset: false });
+                }
+            },
+            {
+                threshold: 0.1,
+                rootMargin: '200px', // Kullanıcı 200px kala tetikle
+            }
+        );
+
+        observer.observe(node);
+        return () => observer.unobserve(node);
+    }, [fetchRoutes, routes.length, hasMore]);
+
+    const fetchHighlights = useCallback(async () => {
+        try {
+            const params = new URLSearchParams({
+                limit: '4',
+                sortBy: 'forksCount',
+                order: 'desc',
+            });
+            const res = await fetch(`/api/routes?${params.toString()}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            setHighlightRoutes(data.routes || []);
+        } catch (error) {
+            setHighlightRoutes([]);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchHighlights();
+    }, [fetchHighlights]);
+
+    useEffect(() => {
+        const source = highlightRoutes.length ? highlightRoutes : routes;
+        const uniqueCreators = [];
+        const seen = new Set();
+
+        source.forEach((route) => {
+            if (route?.owner?.username && !seen.has(route.owner.username)) {
+                seen.add(route.owner.username);
+                uniqueCreators.push({
+                    ...route.owner,
+                    sampleRoute: route.title,
+                });
+            }
+        });
+        setSuggestedCreators(uniqueCreators.slice(0, 3));
+    }, [highlightRoutes, routes]);
 
     const handleSearch = (newSearchTerm = searchTerm, newOrder = order, newTag = tag) => {
         const params = new URLSearchParams();
         if (newSearchTerm) params.set('searchTerm', newSearchTerm);
         params.set('order', newOrder);
         if (newTag) params.set('tag', newTag);
-
         navigate(`/explore?${params.toString()}`);
     };
 
@@ -84,65 +175,152 @@ export default function ExploreRoutes() {
     };
 
     return (
-        <div className='min-h-screen fade-in'>
-            <div className='min-h-screen flex flex-col md:flex-row'>
-                <div className='md:w-56 z-10'>
-                    <SearchSidebar
-                        searchTerm={searchTerm}
-                        order={order}
-                        tag={tag}
-                        handleSearch={(e) => {
-                            e.preventDefault();
-                            handleSearch();
-                        }}
-                        setSearchTerm={(term) => handleSearch(term, order, tag)}
-                        setOrder={(newOrder) => handleFilterChange('order', newOrder)}
-                        setTag={(newTag) => handleFilterChange('tag', newTag)}
-                    />
-                </div>
-                <div className="flex-1 min-h-screen relative isolate bg-white dark:bg-[rgb(22,26,29)] px-6 py-6 sm:py-10 lg:px-8">
-                    <div
-                        aria-hidden="true"
-                        className="absolute inset-x-0 top-0 -z-50 transform-gpu overflow-hidden blur-3xl sm:-top-0"
-                    >
-                        <div
-                            style={{
-                                clipPath:
-                                    'polygon(85% 40%, 100% 55%, 100% 30%, 90% 10%, 85% 5%, 78% 25%, 65% 60%, 55% 70%, 50% 65%, 48% 35%, 30% 80%, 0% 70%, 20% 100%, 30% 78%, 80% 95%, 90% 110%, 95% 130%, 98% 145%, 100% 160%, 100% 200%)',
-                            }}
-                            className="relative left-[calc(50%-5rem)] aspect-[1155/678] w-[48rem] -translate-x-1/2 rotate-[25deg] bg-gradient-to-tr from-[#f728a7] to-[#99d40e] opacity-40 sm:left-[calc(50%-20rem)] sm:w-[80rem] animate-pulse"
-                        />
-                    </div>
-                    <div className="mx-auto max-w-2xl text-center">
-                        {loading === false ? (
-                            <section className='mt-0'>
-                                {routes.length !== 0 ? (
-                                    <>
-                                        <h1 className='text-center font-semibold text-3xl'>Discover Community Routes</h1>
-                                        <p className="mt-0 mb-6 sm:mb-10 text-md text-gray-600 dark:text-gray-400 leading-relaxed">Browse itineraries shared by other explorers and copy the ones you love.</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <h1 className='text-center font-semibold text-3xl'>No Routes Found</h1>
-                                        <p className="mt-0 mb-6 sm:mb-10 text-xl text-gray-600 dark:text-gray-400 leading-relaxed">Try adjusting your search or filters.</p>
-                                    </>
+        <div className='min-h-screen bg-slate-50 dark:bg-[rgb(22,26,29)]'>
+            <div className='mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
+                <div className='grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)_300px]'>
+                    <aside className='space-y-6'>
+                        <div className='rounded-3xl border border-slate-100 dark:border-gray-600 bg-white/90 dark:bg-[rgb(32,38,43)]/70 shadow-sm sticky top-24 p-6'>
+                            <FilterPanel
+                                searchTerm={searchTerm}
+                                order={order}
+                                tag={tag}
+                                handleSearch={(e) => {
+                                    e.preventDefault();
+                                    handleSearch();
+                                }}
+                                setSearchTerm={(term) => handleSearch(term, order, tag)}
+                                setOrder={(newOrder) => handleFilterChange('order', newOrder)}
+                                setTag={(newTag) => handleFilterChange('tag', newTag)}
+                            />
+                        </div>
+{/*                         <div className='rounded-3xl border border-slate-100 dark:border-slate-800 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 text-white p-6 shadow-md'>
+                            <h3 className='text-lg font-semibold mb-2'>Filtreleri Kullan</h3>
+                            <p className='text-sm text-slate-200'>Aradığın rota tipini seç, keşfet butonuna bas ve topluluğun en güncel önerilerini gör.</p>
+                        </div>
+ */}                    </aside>
+
+                    <main className='space-y-8'>
+                        <section className='rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 text-white p-8 shadow-lg'>
+                            <p className='text-sm uppercase tracking-wide opacity-80'>Topluluk akışı</p>
+                            <h1 className='mt-2 text-3xl sm:text-4xl font-semibold'>Yeni rotaları arkadaşların gibi keşfet</h1>
+                            <p className='mt-3 text-base sm:text-lg text-white/90 max-w-2xl'>
+                                İlham veren gezginler hikayelerini paylaşıyor. Fotoğraflarla dolu sosyal akışa katıl, beğendiğin rotaları detaylıca incele.
+                            </p>
+                        </section>
+
+                        {isInitialLoading ? (
+                            <div className='space-y-6'>
+                                {Array.from({ length: 3 }).map((_, idx) => (
+                                    <RouteFeedCardSkeleton key={`initial-skeleton-${idx}`} />
+                                ))}
+                            </div>
+                        ) : routes.length > 0 ? (
+                            <>
+                                <div className='space-y-6'>
+                                    {routes.map((route) => (
+                                        <RouteFeedCard key={route._id} route={route} />
+                                    ))}
+                                </div>
+                                {feedError && (
+                                    <p className='text-sm text-red-500'>{feedError}</p>
                                 )}
-                            </section>
+                                {isFetchingMore && (
+                                    <div className='space-y-6 py-6'>
+                                        {Array.from({ length: 2 }).map((_, idx) => (
+                                            <RouteFeedCardSkeleton key={`more-skeleton-${idx}`} />
+                                        ))}
+                                    </div>
+                                )}
+                                {/* Sentinel element - infinite scroll için */}
+                                <div ref={sentinelRef} className='h-20 w-full' />
+                                {!hasMore && routes.length > 0 && (
+                                    <p className='text-center text-sm text-slate-500 dark:text-slate-400 py-4'>
+                                        💫 Hepsi bu kadar! Yeni rotalar eklendikçe seni haberdar edeceğiz.
+                                    </p>
+                                )}
+                            </>
                         ) : (
-                            <div className='flex p-5 justify-center pb-96 items-center md:items-baseline min-h-screen'>
-                                <Spinner size='xl' />
-                                <p className='text-center text-gray-500 m-2'>Searching...</p>
+                            <div className='rounded-3xl border border-dashed border-slate-200 dark:border-gray-600 bg-white/80 dark:bg-[rgb(32,38,43)]/60 text-center p-12'>
+                                <h2 className='text-2xl font-semibold text-slate-800 dark:text-white mb-4'>Aramana uygun rota bulunamadı</h2>
+                                <p className='text-slate-500 dark:text-slate-400 mb-6'>
+                                    Farklı bir anahtar kelime dene ya da tüm rotaları yeniden görüntüle.
+                                </p>
+                                <button
+                                    onClick={() => handleSearch('', 'desc', '')}
+                                    className='px-5 py-2.5 rounded-full bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition'
+                                >
+                                    Tüm rotaları göster
+                                </button>
                             </div>
                         )}
-                    </div>
-                    {routes.length !== 0 &&
-                        <div>
-                            <div className='flex flex-wrap gap-5 mt-5 justify-center'>
-                                {routes.map((route) => <RouteCard key={route._id} route={route} />)}
-                            </div>
-                        </div>}
+                    </main>
+
+                    <aside>
+                        <div className='space-y-6 lg:sticky lg:top-24'>
+                            <section className='rounded-3xl border border-slate-100 dark:border-gray-600 bg-white dark:bg-[rgb(32,38,43)] p-5 shadow-sm'>
+                                <h3 className='text-lg font-semibold text-slate-900 dark:text-white mb-4'>Bu Hafta Yükselenler</h3>
+                                <div className='space-y-4'>
+                                    {highlightRoutes.length > 0 ? (
+                                        highlightRoutes.map((route) => (
+                                            <Link key={route._id} to={`/routes/${route.slug}`} className='flex items-start gap-3 group'>
+                                                <img
+                                                    src={route.coverImage || FALLBACK_COVER}
+                                                    alt={route.title}
+                                                    className='h-16 w-16 rounded-2xl object-cover flex-shrink-0'
+                                                />
+                                                <div>
+                                                    <p className='text-sm font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition'>
+                                                        {route.title}
+                                                    </p>
+                                                    <p className='text-xs text-slate-500 dark:text-slate-400'>{route.tags?.[0] || 'Öne çıkan rota'}</p>
+                                                </div>
+                                            </Link>
+                                        ))
+                                    ) : (
+                                        <p className='text-sm text-slate-500 dark:text-slate-400'>Trend rotalar yakında burada görünecek.</p>
+                                    )}
+                                </div>
+                            </section>
+
+                            <section className='rounded-3xl border border-slate-100 dark:border-gray-600 bg-white dark:bg-[rgb(32,38,43)] p-5 shadow-sm'>
+                                <h3 className='text-lg font-semibold text-slate-900 dark:text-white mb-4'>Takip Etmeye Değer Gezginler</h3>
+                                <div className='space-y-4'>
+                                    {suggestedCreators.length > 0 ? (
+                                        suggestedCreators.map((creator) => (
+                                            <div key={creator.username} className='flex items-center justify-between gap-3'>
+                                                <div className='flex items-center gap-3'>
+                                                    <img
+                                                        src={creator.profilePicture || 'https://i.pravatar.cc/100?img=12'}
+                                                        alt={creator.username}
+                                                        className='h-12 w-12 rounded-full object-cover bg-gray-100'
+                                                    />
+                                                    <div>
+                                                        <p className='text-sm font-medium text-slate-900 dark:text-white'>
+                                                            {creator.fullName || creator.username}
+                                                        </p>
+                                                        <p className='text-xs text-slate-500 dark:text-slate-400'>@{creator.username}</p>
+                                                        {creator.sampleRoute && (
+                                                            <p className='text-xs text-slate-400 mt-1'>{creator.sampleRoute}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <Link
+                                                    to={`/user/${creator.username}`}
+                                                    className='px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-200 transition'
+                                                >
+                                                    Takip Et
+                                                </Link>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className='text-sm text-slate-500 dark:text-slate-400'>Gezgin önerileri yakında.</p>
+                                    )}
+                                </div>
+                            </section>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </div>
-    )
+    );
 }

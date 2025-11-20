@@ -12,6 +12,7 @@ import { HiOutlineExclamationCircle } from 'react-icons/hi'
 import en from "../assets/lang_Icons/en.png";
 import tr from "../assets/lang_Icons/tr.png";
 import { useTranslation } from "react-i18next";
+import { AnimatedThemeToggler } from './ui/animated-theme-toggler';
 //import '../i18n.jsx';
 
 
@@ -96,7 +97,7 @@ export default function Header() {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </form>
-                        <Button className='w-13 h-11 lg:hidden' color='gray' pill onClick={() => setShowSearchbar(true)}>
+                        <Button className='w-13 h-11 lg:hidden' color='gray' pill onClick={() => setShowSearchbar(!showSearchbar)}>
                             <AiOutlineSearch className='w-4 h-6' />
                         </Button>
                         <div className="inline lg:hidden">
@@ -121,18 +122,21 @@ export default function Header() {
 
                 <div className='flex gap-1 md:order-2'>
 
-                    <Button className='w-13 h-11  hidden sm:inline' color='gray' pill onClick={() => dispatch(toggleLanguage())}>
+                    {/*                     <Button className='w-13 h-11  hidden sm:inline' color='gray' pill onClick={() => dispatch(toggleLanguage())}>
                         {language === 'en' ?
                             <div className='flex justify-center items-center'><img src={en} alt="" className='w-4 h-4' /></div>
                             :
                             <div className='flex justify-center items-center'><img src={tr} alt="" className='w-4 h-4' /></div>}
                     </Button>
 
-                    <Button className='w-13 h-11  hidden sm:inline' color='gray' pill onClick={() => dispatch(toggleTheme())}>
+                    <Button className='w-13 h-11  hidden sm:inline' color='gray' pill onClick={() => dispatch(toggleTheme())}  >
                         {theme === 'light' ? <FaSun /> : <FaMoon />}
                     </Button>
+ */}
+                    <AnimatedThemeToggler className='w-13 h-11 mx-4 p-2 hidden sm:inline' />
+
                     {currentUser ? (
-                        <Dropdown className='z-50' arrowIcon={false} inline label={<Avatar alt='user' img={currentUser.profilePicture} rounded />}>
+                        <Dropdown className='z-50' arrowIcon={false} inline label={<Avatar alt='user' img={currentUser.profilePicture} rounded className='bg-gray-50 rounded-full' />}>
                             <DropdownHeader>
                                 {currentUser.isAdmin && (
                                     <Badge color='failure' size='xs' className='cursor-default'>Admin User</Badge>
@@ -167,35 +171,36 @@ export default function Header() {
                     }
                     <NavbarToggle />
                 </div >
-                <Navbar.Collapse>
-                    <Navbar.Link active={path === "/"} as={'div'}>
-                        <Link to='/' onClick={() => setSearchTerm('')}>
-                            Home
-                        </Link>
-                    </Navbar.Link>
-                    <Navbar.Link active={path === "/explore"} as={'div'}>
-                        <Link to='/explore' onClick={() => setSearchTerm('')}>
-                            Explore Routes
-                        </Link>
-                    </Navbar.Link>
-                    <Navbar.Link active={path === "/about" || path === "/contact"} as={'div'}>
-                        <div onClick={(e) => e.stopPropagation()}>
-                            <Dropdown label="About" className='z-50' inline>
-                                <Dropdown.Item className={path === "/about" ? 'dark:bg-slate-600 bg-gray-100' : ''}>
-                                    <Link to='/about' onClick={() => { setSearchTerm(''); }}>
-                                        About Us
-                                    </Link>
-                                </Dropdown.Item>
-                                <Dropdown.Item className={path === "/contact" ? 'dark:bg-slate-600 bg-gray-100' : ''}>
-                                    <Link to='/contact' onClick={() => { setSearchTerm(''); }}>
-                                        Contact Us
-                                    </Link>
-                                </Dropdown.Item>
-                            </Dropdown>
-                        </div>
-                    </Navbar.Link>
-                    <div className='flex justify-center sm:hidden'>
-                        <Navbar.Link as={'div'}>
+
+                    <Navbar.Collapse>
+                        <Navbar.Link active={path === "/"} as={'div'}>
+                            <Link to='/' onClick={() => setSearchTerm('')}>
+                                Home
+                            </Link>
+                        </Navbar.Link>
+                        <Navbar.Link active={path === "/explore"} as={'div'}>
+                            <Link to='/explore' onClick={() => setSearchTerm('')}>
+                                Explore Routes
+                            </Link>
+                        </Navbar.Link>
+                        <Navbar.Link active={path === "/about" || path === "/contact"} as={'div'}>
+                            <div onClick={(e) => e.stopPropagation()}>
+                                <Dropdown label="About" className='z-50' inline>
+                                    <Dropdown.Item className={path === "/about" ? 'dark:bg-slate-600 bg-gray-100' : ''}>
+                                        <Link to='/about' onClick={() => { setSearchTerm(''); }}>
+                                            About Us
+                                        </Link>
+                                    </Dropdown.Item>
+                                    <Dropdown.Item className={path === "/contact" ? 'dark:bg-slate-600 bg-gray-100' : ''}>
+                                        <Link to='/contact' onClick={() => { setSearchTerm(''); }}>
+                                            Contact Us
+                                        </Link>
+                                    </Dropdown.Item>
+                                </Dropdown>
+                            </div>
+                        </Navbar.Link>
+                        <div className='flex justify-center sm:hidden'>
+                            {/*                         <Navbar.Link as={'div'}>
                             <div onClick={(e) => e.stopPropagation()}>
                                 <Dropdown label="Language" className='rounded-full z-50' inline>
                                     <Button className='w-13 h-11 justify-center items-center mx-1' color='gray' pill onClick={() => dispatch(toggleLanguage())}>
@@ -207,18 +212,21 @@ export default function Header() {
                                 </Dropdown>
                             </div>
                         </Navbar.Link>
-
-                        <Navbar.Link as={'div'}>
-                            <div onClick={(e) => e.stopPropagation()}>
-                                <Dropdown label="Theme" className='rounded-full z-50' inline>
+ */}
+                            {/*                         <Navbar.Link as={'div'}>
+ */}                            <div onClick={(e) => e.stopPropagation()}>
+                                {/*                                 <Dropdown label="Theme" className='rounded-full z-50' inline>
                                     <Button className='w-13 h-11 justify-center items-center mx-1' color='gray' pill onClick={() => dispatch(toggleTheme())}>
                                         {theme === 'light' ? <FaSun /> : <FaMoon />}
                                     </Button>
                                 </Dropdown>
+ */}
+
+                                <AnimatedThemeToggler className='w-13 h-11' />
                             </div>
-                        </Navbar.Link>
-                    </div>
-                </Navbar.Collapse>
+                            {/*                         </Navbar.Link>
+ */}                    </div>
+                    </Navbar.Collapse>
             </Navbar >
 
             <Modal show={showSignout} onClose={() => setShowSignout(false)} popup size='md'>

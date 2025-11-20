@@ -12,12 +12,15 @@ import DashSettings from '../components/DashSettings';
 import DashRoutes from '../components/DashRoutes';
 import DashItineraries from '../components/DashItineraries';
 import DashItineraryModeration from '../components/DashItineraryModeration';
+import ProfileShowcase from '../components/ProfileShowcase';
+import { Modal } from 'flowbite-react';
 
 export default function DashboardPage() {
 
   const { currentUser } = useSelector((state) => state.user)
   const location = useLocation();
   const [tab, setTab] = useState('')
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -36,7 +39,13 @@ export default function DashboardPage() {
   const renderTabContent = () => {
     if (!currentUser.isAdmin && (tab === 'my-routes' || !tab)) return <DashRoutes />;
     if (!currentUser.isAdmin && tab === 'my-itineraries') return <DashItineraries />;
-    if (tab === 'profile') return <DashProfile />;
+    if (tab === 'profile') {
+      return <div className='flex-1'>
+        <div className='p-4 sm:p-8 w-full'>
+          <ProfileShowcase onEditProfile={() => setShowProfileEditor(true)} />
+        </div>
+      </div>
+    };
     if (currentUser.isAdmin && tab === 'routes') return <DashRoutes />;
     if (currentUser.isAdmin && tab === 'users') return <DashUsers />;
     if (currentUser.isAdmin && tab === 'comments') return <DashComments />;
@@ -54,6 +63,12 @@ export default function DashboardPage() {
         <DashSidebar />
       </div>
       {renderTabContent()}
+      <Modal show={showProfileEditor} size='5xl' onClose={() => setShowProfileEditor(false)}>
+        <Modal.Header>Profili Güncelle</Modal.Header>
+        <Modal.Body className='max-h-[80vh] overflow-y-auto'>
+          <DashProfile />
+        </Modal.Body>
+      </Modal>
     </div>
   )
 }

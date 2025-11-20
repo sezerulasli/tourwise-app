@@ -1,18 +1,130 @@
-const flowbite = require("flowbite-react/tailwind");
-const scrollbar = require('tailwind-scrollbar');
+import flowbite from 'flowbite-react/tailwind'
+import scrollbar from 'tailwind-scrollbar'
+import tailwindcssAnimate from 'tailwindcss-animate'
 
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ['class'],
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
     flowbite.content(),
   ],
   theme: {
-    extend: {},
+    container: {
+      center: true,
+      padding: '2rem',
+      screens: {
+        '2xl': '1400px',
+      },
+    },
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: 0 },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: 0 },
+        },
+        aurora: {
+          '0%': {
+            backgroundPosition: '0% 50%',
+            transform: 'rotate(-5deg) scale(0.9)',
+          },
+          '25%': {
+            backgroundPosition: '50% 100%',
+            transform: 'rotate(5deg) scale(1.1)',
+          },
+          '50%': {
+            backgroundPosition: '100% 50%',
+            transform: 'rotate(-3deg) scale(0.95)',
+          },
+          '75%': {
+            backgroundPosition: '50% 0%',
+            transform: 'rotate(3deg) scale(1.05)',
+          },
+          '100%': {
+            backgroundPosition: '0% 50%',
+            transform: 'rotate(-5deg) scale(0.9)',
+          },
+        },
+        rainbow: {
+          '0%': {
+            backgroundPosition: '0%',
+          },
+          '100%': {
+            backgroundPosition: '200%',
+          },
+        },
+        'shiny-text': {
+          '0%, 90%, 100%': {
+            backgroundPosition: 'calc(-100% - var(--shiny-width)) 0',
+          },
+          '30%, 60%': {
+            backgroundPosition: 'calc(100% + var(--shiny-width)) 0',
+          },
+        },
+        gradient: {
+          to: {
+            backgroundPosition: 'var(--bg-size, 300%) 0',
+          },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        aurora: 'aurora 8s ease-in-out infinite alternate',
+        rainbow: 'rainbow var(--speed, 2s) linear infinite',
+        'shiny-text': 'shiny-text 8s ease infinite',
+        gradient: 'gradient 8s linear infinite',
+      },
+    },
   },
   plugins: [
     flowbite.plugin(),
     scrollbar,
+    tailwindcssAnimate,
   ],
 }

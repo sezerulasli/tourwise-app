@@ -9,6 +9,17 @@ import { Link } from 'react-router-dom';
 import FooterBanner from '../components/FooterBanner';
 import RouteCardSkeleton from '../components/RouteCardSkeleton';
 import { motion } from 'framer-motion';
+import { Globe } from '@/components/ui/globe';
+import { AuroraText } from '@/components/ui/aurora-text';
+import { BlurFade } from '@/components/ui/blur-fade';
+import { NumberTicker } from '@/components/ui/number-ticker';
+import { ShinyButton } from '@/components/ui/shiny-button';
+import { PixelImage } from '@/components/ui/pixel-image';
+import { ArrowRightIcon } from 'lucide-react';
+import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
+import { cn } from '@/lib/utils';
+import { RainbowButton } from '@/components/ui/rainbow-button';
+import { TypingAnimation } from '@/components/ui/typing-animation';
 
 const stats = [
   { id: 1, name: 'We help every year', value: '500', suffix: ' users', prefix: '>' },
@@ -21,7 +32,7 @@ const useCounter = (end, duration = 2000, trigger = false) => {
 
   useEffect(() => {
     if (!trigger) return;
-    
+
     let startTime = null;
     const animate = (currentTime) => {
       if (!startTime) startTime = currentTime;
@@ -40,6 +51,11 @@ const useCounter = (end, duration = 2000, trigger = false) => {
   return count;
 };
 
+// Random hex color generator
+const generateRandomColor = () => {
+  return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+};
+
 export default function HomePage() {
   const { currentUser } = useSelector((state) => state.user);
   const [recentRoutes, setRecentRoutes] = useState([]);
@@ -48,6 +64,13 @@ export default function HomePage() {
   const [img1Loaded, setImg1Loaded] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [img2Loaded, setImg2Loaded] = useState(false);
+
+  // Random colors for gradient backgrounds
+  const [gradientColors, setGradientColors] = useState(() => ({
+    gradient1: { from: generateRandomColor(), to: generateRandomColor() },
+    gradient2: { from: generateRandomColor(), to: generateRandomColor() },
+    gradient3: { from: generateRandomColor(), to: generateRandomColor() },
+  }));
 
   useEffect(() => {
     try {
@@ -78,8 +101,9 @@ export default function HomePage() {
               style={{
                 clipPath:
                   'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
+                background: `linear-gradient(to top right, ${gradientColors.gradient1.from}, ${gradientColors.gradient1.to})`,
               }}
-              className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem] animate-[pulse_7s_ease-in-out_infinite]"
+              className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem] animate-[pulse_7s_ease-in-out_infinite]"
             />
           </div>
           <div
@@ -90,29 +114,57 @@ export default function HomePage() {
               style={{
                 clipPath:
                   'polygon(90% 10%, 100% 20%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 1% 100%, 76.1% 97.7%, 85% 110%, 90% 125%, 95% 140%, 98% 155%, 100% 170%, 200% 200%)',
+                background: `linear-gradient(to top right, ${gradientColors.gradient2.from}, ${gradientColors.gradient2.to})`,
               }}
-              className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#63ff97] to-[#668aff] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem] animate-[pulse_6s_ease-in-out_infinite]"
+              className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] opacity-30 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem] animate-[pulse_6s_ease-in-out_infinite]"
             />
           </div>
 
-          <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
+          <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56 mb-10">
             <div className="text-center">
-              <h1 className="text-balance text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-7xl">
-                Craft routes worth sharing
-              </h1>
-              <p className="mt-8 text-pretty text-lg font-medium text-gray-500 dark:text-gray-400 sm:text-xl/8">
-                Map your perfect itinerary, publish it for the community, and fork routes from fellow explorers. <span className='text-2xl'>🧭</span>
-              </p>
-              <div className="mt-10 flex items-center justify-center gap-x-6">
-                <Link to='/explore'>
-                  <button className="px-6 py-3 text-lg font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-md hover:scale-105 transition-transform">
-                    Explore public routes
-                  </button>
-                </Link>
-                <a href={currentUser ? "/dashboard?tab=profile" : "/sign-in"} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-200" >
-                  {currentUser ? "Go to profile" : "Sign in"} <span aria-hidden="true">→</span>
-                </a>
-              </div>
+              <BlurFade delay={0.25} inView>
+                <h1 className="text-balance text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-7xl">
+                  <TypingAnimation
+                    words={["Craft", "Arrange", "Explore"]}
+                    blinkCursor={true}
+                    pauseDelay={3000}
+                    loop
+                    className="mr-4"
+                    showCursor={false}
+                  ></TypingAnimation>
+                  <AuroraText> routes </AuroraText>
+                  <br /> worth discover'
+                </h1>
+              </BlurFade>
+              <BlurFade delay={0.25 * 2} inView>
+                <p className="mt-8 text-pretty text-lg font-medium text-gray-500 dark:text-gray-400 sm:text-xl/8">
+                  Map your perfect itinerary, publish it for the community, and fork routes from fellow explorers. <span className='text-2xl'>🧭</span>
+                </p>
+              </BlurFade>
+              <BlurFade delay={0.25 * 3} inView>
+                <div className="mt-10 flex items-center justify-center gap-x-6">
+                  <Link to='/explore'>
+                    <RainbowButton className='h-12'>Explore public routes</RainbowButton>
+                  </Link>
+                  <div className="z-10 flex items-center justify-center">
+                    <Link to={currentUser ? "/dashboard?tab=profile" : "/sign-in"}>
+                      <div
+                        className={cn(
+                          "group rounded-full border border-black/5 bg-neutral-100 text-base text-white transition-all ease-in hover:cursor-pointer hover:bg-neutral-200 dark:border-white/5 dark:bg-neutral-900 dark:hover:bg-neutral-800"
+                        )}
+                      >
+                        <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
+                          <span>✨ {currentUser ? "Go to profile" : "Sign in"}</span>
+                          <ArrowRightIcon className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
+                        </AnimatedShinyText>
+                      </div>
+                    </Link>
+                  </div>
+                  {/*                   <a href={currentUser ? "/dashboard?tab=profile" : "/sign-in"} className="text-sm font-semibold leading-6 text-gray-900 dark:text-gray-200" >
+                    {currentUser ? "Go to profile" : "Sign in"} <span aria-hidden="true">→</span>
+                  </a>
+ */}                </div>
+              </BlurFade>
             </div>
           </div>
           <div
@@ -123,43 +175,50 @@ export default function HomePage() {
               style={{
                 clipPath:
                   'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
+                background: `linear-gradient(to top right, ${gradientColors.gradient3.from}, ${gradientColors.gradient3.to})`,
               }}
-              className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#ff9a8b] to-[#ff6a88] opacity-30 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem] animate-[pulse_7s_ease-in-out_infinite]"
+              className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 opacity-30 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem] animate-[pulse_7s_ease-in-out_infinite]"
             />
           </div>
         </div>
 
         <div className='flex-1 m-auto'>
           <div className='flex flex-row gap-3 px-3 sm:px-10 md:px-20 lg:pr-16 lg:pl-10 xl:pr-24 2xl:pr-44 md:flex-row items-center justify-center transition-all duration-500'>
-            <div className='hero__box mb-10 relative'>
-              <img
-                src={heroPhoto1}
-                alt=""
-                onLoad={() => setImg1Loaded(true)}
-                className={`transition-opacity duration-700 ${img1Loaded ? 'opacity-100' : 'opacity-0'}`}
-              />
-            </div>
-            <div className='hero__box mb-20 relative'>
-              <video
-                src={heroVideo}
-                autoPlay
-                loop
-                muted
-                onCanPlayThrough={() => setVideoLoaded(true)}
-                className={`transition-opacity duration-700 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
-              />
-            </div>
-            <div className='hero__box relative'>
-              <img
-                src={heroPhoto2}
-                alt=""
-                onLoad={() => setImg2Loaded(true)}
-                className={`transition-opacity duration-700 ${img2Loaded ? 'opacity-100' : 'opacity-0'}`}
-              />
-            </div>
+            <BlurFade delay={0.25 * 2} inView>
+              <div className='hero__box mb-10 relative'>
+                <img
+                  src={heroPhoto1}
+                  alt=""
+                  onLoad={() => setImg1Loaded(true)}
+                  className={`transition-opacity duration-700 ${img1Loaded ? 'opacity-100' : 'opacity-0'}`}
+                />
+              </div>
+            </BlurFade>
+            <BlurFade delay={0.25 * 3} inView>
+              <div className='hero__box mb-20 relative'>
+                <video
+                  src={heroVideo}
+                  autoPlay
+                  loop
+                  muted
+                  onCanPlayThrough={() => setVideoLoaded(true)}
+                  className={`transition-opacity duration-700 ${videoLoaded ? 'opacity-100' : 'opacity-0'}`}
+                />
+              </div>
+            </BlurFade>
+            <BlurFade delay={0.25} inView>
+              <div className='hero__box relative'>
+                <img
+                  src={heroPhoto2}
+                  alt=""
+                  onLoad={() => setImg2Loaded(true)}
+                  className={`transition-opacity duration-700 ${img2Loaded ? 'opacity-100' : 'opacity-0'}`}
+                />
+              </div>
+            </BlurFade>
           </div>
         </div>
-      </section>
+      </section >
 
       <motion.section
         initial={{ opacity: 0, y: 100 }}
@@ -169,7 +228,7 @@ export default function HomePage() {
       >
         <div className="pt-2 pb-16 sm:pb-20 sm:pt-2">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <motion.dl 
+            <motion.dl
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
@@ -179,7 +238,7 @@ export default function HomePage() {
               {stats.map((stat, index) => {
                 const [isVisible, setIsVisible] = useState(false);
                 const count = useCounter(parseFloat(stat.value), 2000, isVisible);
-                
+
                 return (
                   <motion.div
                     key={stat.id}
@@ -190,7 +249,7 @@ export default function HomePage() {
                     onViewportEnter={() => setIsVisible(true)}
                     className="mx-auto flex max-w-xs flex-col gap-y-2 z-10"
                   >
-                    <motion.dt 
+                    <motion.dt
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 1 }}
                       viewport={{ once: true }}
@@ -199,7 +258,7 @@ export default function HomePage() {
                     >
                       {stat.name}
                     </motion.dt>
-                    <motion.dd 
+                    <motion.dd
                       initial={{ opacity: 0, scale: 0.9 }}
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ once: true }}
@@ -207,7 +266,7 @@ export default function HomePage() {
                       className="order-first text-4xl font-semibold tracking-tight text-gray-900 dark:text-gray-50 sm:text-5xl flex flex-row items-center justify-center gap-2"
                     >
                       {stat.prefix && (
-                        <motion.span 
+                        <motion.span
                           initial={{ opacity: 0, x: -10 }}
                           whileInView={{ opacity: 1, x: 0 }}
                           viewport={{ once: true }}
@@ -223,7 +282,12 @@ export default function HomePage() {
                         viewport={{ once: true }}
                         transition={{ duration: 0.5, delay: 0.6 }}
                       >
-                        {stat.value.includes('.') ? count.toFixed(0) : count}{stat.suffix}
+                        {/* {stat.value.includes('.') ? count.toFixed(0) : count} */}
+                        <NumberTicker
+                          value={count}
+                          className=" tracking-tighter whitespace-pre-wrap text-black dark:text-white"
+                        />
+                        {stat.suffix}
                       </motion.span>
                     </motion.dd>
                   </motion.div>
@@ -234,14 +298,14 @@ export default function HomePage() {
         </div>
       </motion.section>
 
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         className='mt-0 sm:mt-10'
       >
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -250,7 +314,7 @@ export default function HomePage() {
         >
           Freshly Shared Routes
         </motion.h1>
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
@@ -259,29 +323,29 @@ export default function HomePage() {
         >
           {loading || recentRoutes.length === 0
             ? Array.from({ length: 3 }).map((_, i) => (
-                <motion.div
-                  key={`route-skeleton-${i}`}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="w-full sm:w-[430px]"
-                >
-                  <RouteCardSkeleton />
-                </motion.div>
-              ))
+              <motion.div
+                key={`route-skeleton-${i}`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="w-full sm:w-[430px]"
+              >
+                <RouteCardSkeleton />
+              </motion.div>
+            ))
             : recentRoutes.map((route) => (
-                <motion.div
-                  key={route._id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="w-full sm:w-[430px]"
-                >
-                  <RouteCard route={route} />
-                </motion.div>
-              ))
+              <motion.div
+                key={route._id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="w-full sm:w-[430px]"
+              >
+                <RouteCard route={route} />
+              </motion.div>
+            ))
           }
         </motion.div>
       </motion.section>
@@ -291,6 +355,6 @@ export default function HomePage() {
           <FooterBanner />
         </div>
       </section>
-    </div>
+    </div >
   )
 }

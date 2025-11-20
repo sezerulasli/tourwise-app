@@ -1,5 +1,6 @@
 import Route from "../models/route.model.js";
 import Comment from "../models/comment.model.js";
+import User from "../models/user.model.js";
 import { errorHandler } from "../utils/error.js";
 
 const buildSlug = (title = "") => {
@@ -152,6 +153,54 @@ const buildRoutesQuery = (req) => {
     return query;
 };
 
+const enrichRoutesWithMeta = async (routesDocs = []) => {
+    if (!routesDocs.length) return [];
+
+    const plainRoutes = routesDocs.map((route) => route.toObject());
+    const userIds = [...new Set(plainRoutes.map((route) => route.userId).filter(Boolean))];
+    const routeIds = plainRoutes.map((route) => route._id.toString());
+
+    const [users, commentsGroup] = await Promise.all([
+        userIds.length
+            ? User.find({ _id: { $in: userIds } })
+                .select("_id username firstName lastName profilePicture")
+                .lean()
+            : [],
+        routeIds.length
+            ? Comment.aggregate([
+                { $match: { routeId: { $in: routeIds } } },
+                { $group: { _id: "$routeId", count: { $sum: 1 } } },
+            ])
+            : [],
+    ]);
+
+    const userMap = new Map(
+        users.map((user) => [
+            user._id.toString(),
+            {
+                _id: user._id.toString(),
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                profilePicture: user.profilePicture,
+                fullName: `${user.firstName} ${user.lastName}`,
+            },
+        ])
+    );
+
+    const commentCountMap = commentsGroup.reduce((acc, item) => {
+        acc[item._id] = item.count;
+        return acc;
+    }, {});
+
+    return plainRoutes.map((route) => ({
+        ...route,
+        owner: userMap.get(route.userId) || null,
+        commentsCount: commentCountMap[route._id.toString()] || 0,
+        likesCount: Array.isArray(route.likes) ? route.likes.length : 0,
+    }));
+};
+
 export const getRoutes = async (req, res, next) => {
     try {
         const startIndex = parseInt(req.query.startIndex, 10) || 0;
@@ -197,8 +246,10 @@ export const getRoutes = async (req, res, next) => {
             }
         }
 
+        const enrichedRoutes = await enrichRoutesWithMeta(routes);
+
         res.status(200).json({
-            routes,
+            routes: enrichedRoutes,
             totalRoutes,
             lastMonthRoutes,
         });

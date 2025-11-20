@@ -1,5 +1,5 @@
 import { Badge } from 'flowbite-react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { IoLocationSharp } from "react-icons/io5";
 import CommentSection from './CommentSection';
 import '../styles/home.css';
@@ -13,145 +13,141 @@ const hasContent = (htmlString) => {
 };
 
 export default function RouteDetails({ route }) {
-    const gallery = useMemo(() => {
-        if (!route) return [];
-        const items = [];
-        if (route.coverImage) items.push(route.coverImage);
-        if (Array.isArray(route.gallery)) {
-            items.push(...route.gallery.filter(Boolean));
+    const heroImage = useMemo(() => {
+        if (!route) return FALLBACK_COVER;
+        if (route.coverImage) return route.coverImage;
+        if (Array.isArray(route.gallery) && route.gallery.length > 0) {
+            return route.gallery[0];
         }
-        return items.length > 0 ? items : [FALLBACK_COVER];
+        return FALLBACK_COVER;
     }, [route]);
 
-    const [activeImage, setActiveImage] = useState(gallery[0]);
+    const statItems = [
+        { label: 'Süre', value: `${route?.durationDays || 1} gün` },
+        { label: 'Mesafe', value: `${route?.distanceKm || 0} km` },
+        { label: 'Durak', value: `${route?.waypointList?.length || 0} durak` },
+        { label: 'Sezon', value: route?.season || 'Tüm yıl' },
+    ];
 
     return (
-        <div className="rounded-lg shadow-md bg-white dark:bg-gray-800">
-            <div className="relative">
-                <div className="w-full h-[320px] sm:h-[420px] bg-gray-100 dark:bg-gray-700 rounded-t-lg overflow-hidden">
+        <div className='space-y-8'>
+            <div className='rounded-3xl overflow-hidden border border-slate-100 dark:border-gray-700 bg-white dark:bg-[rgb(32,38,43)] shadow-sm'>
+                <div className='relative h-[360px] w-full'>
                     <img
-                        src={activeImage}
+                        src={heroImage}
                         alt={route?.title}
-                        className="w-full h-full object-cover"
+                        className='h-full w-full object-cover'
                     />
-                </div>
-                {gallery.length > 1 && (
-                    <div className="flex gap-3 px-4 py-3 overflow-x-auto bg-white dark:bg-gray-800">
-                        {gallery.map((image, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setActiveImage(image)}
-                                className={`h-20 w-28 rounded-md overflow-hidden border-2 transition-all ${activeImage === image ? 'border-teal-500' : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600'}`}
-                            >
-                                <img src={image} alt={`Route preview ${index + 1}`} className="h-full w-full object-cover" />
-                            </button>
-                        ))}
+                    <div className='absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent' />
+                    <div className='absolute bottom-0 left-0 right-0 p-6 flex flex-wrap items-end gap-4 text-white'>
+                        <div>
+                            <p className='text-sm uppercase tracking-widest text-white/80'>Rotanın başlangıcı</p>
+                            <p className='text-2xl font-semibold'>{route?.startLocation || 'Belirtilmedi'}</p>
+                        </div>
+                        <div className='h-10 w-px bg-white/30 hidden sm:block' />
+                        <div>
+                            <p className='text-sm uppercase tracking-widest text-white/80'>Varış noktası</p>
+                            <p className='text-2xl font-semibold'>{route?.endLocation || 'Belirtilmedi'}</p>
+                        </div>
                     </div>
-                )}
-            </div>
+                </div>
 
-            <div className='p-5 flex flex-col gap-5'>
-                <div className='bg-gray-50 dark:bg-gray-700 rounded-md p-5 flex flex-col gap-4 shadow-sm'>
+                <div className='p-6 space-y-6'>
                     <div className='flex flex-wrap gap-2'>
                         {route?.tags?.map((tag) => (
                             <Badge key={tag} color='gray' size='sm'>
-                                {tag}
+                                #{tag}
                             </Badge>
                         ))}
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white tracking-tight">{route?.title}</h1>
-                    <p className='text-gray-600 dark:text-gray-300 text-base leading-relaxed'>{route?.summary}</p>
+                    <p className='text-lg text-slate-600 dark:text-slate-300 leading-relaxed'>{route?.summary}</p>
 
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-300'>
-                        {route?.startLocation && (
-                            <div className='flex items-center gap-2'>
-                                <IoLocationSharp className="text-teal-500 dark:text-teal-400 size-5" />
-                                <span><strong>Start:</strong> {route.startLocation}</span>
+                    <div className='grid grid-cols-2 gap-3 text-sm'>
+                        {statItems.map((item) => (
+                            <div key={item.label} className='rounded-2xl bg-slate-50 dark:bg-[rgb(42,50,56)] p-4'>
+                                <p className='text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400'>{item.label}</p>
+                                <p className='text-xl font-semibold text-slate-900 dark:text-white'>{item.value}</p>
                             </div>
-                        )}
-                        {route?.endLocation && (
-                            <div className='flex items-center gap-2'>
-                                <IoLocationSharp className="text-teal-500 dark:text-teal-400 size-5" />
-                                <span><strong>Finish:</strong> {route.endLocation}</span>
-                            </div>
-                        )}
-                        {route?.distanceKm ? (
-                            <div><strong>Distance:</strong> {route.distanceKm} km</div>
-                        ) : null}
-                        {route?.durationDays ? (
-                            <div><strong>Duration:</strong> {route.durationDays} day(s)</div>
-                        ) : null}
-                        {route?.season && (
-                            <div><strong>Best season:</strong> {route.season}</div>
-                        )}
+                        ))}
                         {route?.terrainTypes?.length > 0 && (
-                            <div><strong>Terrain:</strong> {route.terrainTypes.join(', ')}</div>
+                            <div className='rounded-2xl bg-slate-50 dark:bg-[rgb(42,50,56)] p-4 col-span-2'>
+                                <p className='text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400'>Zemin</p>
+                                <p className='text-lg font-semibold text-slate-900 dark:text-white'>{route.terrainTypes.join(', ')}</p>
+                            </div>
                         )}
                     </div>
                 </div>
+            </div>
 
-        <div className='grid gap-5'>
-          {route?.overview && hasContent(route.overview) && (
-            <section className='bg-gray-50 dark:bg-gray-700 rounded-md p-4'>
-              <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-3'>Route Overview</h2>
-              <div className='post-content text-gray-800 dark:text-gray-200' dangerouslySetInnerHTML={{ __html: route.overview }} />
-            </section>
-          )}
-          {route?.itinerary && hasContent(route.itinerary) && (
-            <section className='bg-gray-50 dark:bg-gray-700 rounded-md p-4'>
-              <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-3'>Itinerary</h2>
-              <div className='post-content text-gray-800 dark:text-gray-200' dangerouslySetInnerHTML={{ __html: route.itinerary }} />
-            </section>
-          )}
-          {route?.highlights && hasContent(route.highlights) && (
-            <section className='bg-gray-50 dark:bg-gray-700 rounded-md p-4'>
-              <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-3'>Highlights</h2>
-              <div className='post-content text-gray-800 dark:text-gray-200' dangerouslySetInnerHTML={{ __html: route.highlights }} />
-            </section>
-          )}
-          {route?.tips && hasContent(route.tips) && (
-            <section className='bg-gray-50 dark:bg-gray-700 rounded-md p-4'>
-              <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-3'>Insider Tips</h2>
-              <div className='post-content text-gray-800 dark:text-gray-200' dangerouslySetInnerHTML={{ __html: route.tips }} />
-            </section>
-          )}
-        </div>
-
-                {route?.waypointList?.length > 0 && (
-                    <section className='bg-gray-50 dark:bg-gray-700 rounded-md p-4'>
-                        <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-3'>Waypoints</h2>
-                        <div className='space-y-3'>
-                            {route.waypointList.sort((a, b) => (a.order || 0) - (b.order || 0)).map((stop, index) => (
-                                <div key={`${stop.title}-${index}`} className='border border-gray-200 dark:border-gray-600 rounded-md p-3 bg-white dark:bg-gray-800'>
-                                    <div className='flex justify-between text-sm text-gray-500 dark:text-gray-400'>
-                                        <span>Day {stop.day || index + 1}</span>
-                                        {stop.startTime && (
-                                            <span>{stop.startTime}{stop.endTime ? ` – ${stop.endTime}` : ''}</span>
-                                        )}
-                                    </div>
-                                    <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-100 mt-1'>{stop.title}</h3>
-                                    {stop.location && (
-                                        <div className='flex items-center gap-1 text-gray-500 dark:text-gray-400 text-sm'>
-                                            <IoLocationSharp className='size-4 text-teal-500 dark:text-teal-400' /> {stop.location}
-                                        </div>
-                                    )}
-                                    {stop.summary && (
-                                        <p className='mt-2 text-sm text-gray-600 dark:text-gray-300'>{stop.summary}</p>
-                                    )}
-                                    {stop.notes && (
-                                        <p className='mt-1 text-xs text-gray-500 dark:text-gray-400 italic'>{stop.notes}</p>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+            <div className='rounded-3xl border border-slate-100 dark:border-gray-700 bg-white dark:bg-[rgb(32,38,43)] p-6 space-y-5 shadow-sm'>
+                {route?.overview && hasContent(route.overview) && (
+                    <section className='space-y-3'>
+                        <h2 className='text-2xl font-semibold text-slate-900 dark:text-white'>Rota Özeti</h2>
+                        <div className='post-content text-slate-700 dark:text-slate-200' dangerouslySetInnerHTML={{ __html: route.overview }} />
                     </section>
                 )}
+                {route?.itinerary && hasContent(route.itinerary) && (
+                    <section className='space-y-3'>
+                        <h2 className='text-2xl font-semibold text-slate-900 dark:text-white'>Detaylı Program</h2>
+                        <div className='post-content text-slate-700 dark:text-slate-200' dangerouslySetInnerHTML={{ __html: route.itinerary }} />
+                    </section>
+                )}
+                {route?.highlights && hasContent(route.highlights) && (
+                    <section className='space-y-3'>
+                        <h2 className='text-2xl font-semibold text-slate-900 dark:text-white'>Öne Çıkanlar</h2>
+                        <div className='post-content text-slate-700 dark:text-slate-200' dangerouslySetInnerHTML={{ __html: route.highlights }} />
+                    </section>
+                )}
+                {route?.tips && hasContent(route.tips) && (
+                    <section className='space-y-3'>
+                        <h2 className='text-2xl font-semibold text-slate-900 dark:text-white'>Gezgin Notları</h2>
+                        <div className='post-content text-slate-700 dark:text-slate-200' dangerouslySetInnerHTML={{ __html: route.tips }} />
+                    </section>
+                )}
+            </div>
 
-        <section className='bg-gray-50 dark:bg-gray-700 rounded-md p-4'>
-          <h2 className='text-2xl font-semibold text-gray-800 dark:text-white mb-3'>Discussion</h2>
-          <CommentSection routeId={route?._id} />
-        </section>
-      </div>
-    </div>
-  );
+            {route?.waypointList?.length > 0 && (
+                <section className='rounded-3xl border border-slate-100 dark:border-gray-700 bg-white dark:bg-[rgb(32,38,43)] p-6 shadow-sm'>
+                    <h2 className='text-2xl font-semibold text-slate-900 dark:text-white mb-4'>Duraklar</h2>
+                    <div className='space-y-5'>
+                        {route.waypointList
+                            .sort((a, b) => (a.order || 0) - (b.order || 0))
+                            .map((stop, index, arr) => (
+                                <div key={`${stop.title}-${index}`} className='flex items-start gap-4'>
+                                    <div className='flex flex-col items-center'>
+                                        <div className='h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold'>
+                                            {index + 1}
+                                        </div>
+                                        {index < arr.length - 1 && <div className='w-px flex-1 bg-slate-200 dark:bg-gray-700'></div>}
+                                    </div>
+                                    <div className='flex-1 rounded-2xl bg-slate-50 dark:bg-[rgb(42,50,56)] p-4 shadow-inner'>
+                                        <div className='flex flex-wrap justify-between text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide'>
+                                            <span>Gün {stop.day || index + 1}</span>
+                                            {stop.startTime && <span>{stop.startTime}{stop.endTime ? ` – ${stop.endTime}` : ''}</span>}
+                                        </div>
+                                        <h3 className='text-lg font-semibold text-slate-900 dark:text-white mt-1'>{stop.title}</h3>
+                                        {stop.location && (
+                                            <div className='flex items-center gap-1 text-slate-500 dark:text-slate-300 text-sm mt-1'>
+                                                <IoLocationSharp className='size-4 text-blue-500' /> {stop.location}
+                                            </div>
+                                        )}
+                                        {stop.summary && (
+                                            <p className='mt-2 text-sm text-slate-600 dark:text-slate-300'>{stop.summary}</p>
+                                        )}
+                                        {stop.notes && (
+                                            <p className='mt-1 text-xs text-slate-500 dark:text-slate-400 italic'>{stop.notes}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                    </div>
+                </section>
+            )}
+
+            <section className='rounded-3xl border border-slate-100 dark:border-gray-700 bg-white dark:bg-[rgb(32,38,43)] p-6 shadow-sm'>
+                <h2 className='text-2xl font-semibold text-slate-900 dark:text-white mb-3'>Yorumlar</h2>
+                <CommentSection routeId={route?._id} />
+            </section>
+        </div>
+    );
 }

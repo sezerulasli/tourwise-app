@@ -16,6 +16,7 @@ import NotFound from './pages/NotFound.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
 import ContantUs from './pages/ContactUs.jsx';
 import ExploreRoutes from './pages/ExploreRoutes.jsx';
+import UserProfilePage from './pages/UserProfilePage.jsx';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContantUs />} />
         <Route path="/explore" element={<ExploreRoutes />} />
+        <Route path="/user/:username" element={<UserProfilePage />} />
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
 

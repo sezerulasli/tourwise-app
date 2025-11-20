@@ -139,6 +139,24 @@ export const getUser = async (req, res, next) => {
     }
 };
 
+export const getUserByUsername = async (req, res, next) => {
+    try {
+        const usernameParam = req.params.username?.trim();
+        if (!usernameParam) {
+            return next(errorHandler(400, 'Username is required'));
+        }
+
+        const user = await User.findOne({ username: usernameParam });
+        if (!user) {
+            return next(errorHandler(404, 'User not found!'));
+        }
+        const { password, ...rest } = user._doc;
+        res.status(200).json(rest);
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const getUsersPP = async (req, res, next) => {
     if (!req.user.isAdmin) {
         return next(errorHandler(403, 'You are not allowed to see users'));

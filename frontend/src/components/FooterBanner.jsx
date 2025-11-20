@@ -2,6 +2,7 @@ import React from 'react'
 import custSer from "../assets/home_page/customer_services.png";
 import { Link } from 'react-router-dom';
 import '../styles/home.css';
+import { Highlighter } from './ui/highlighter';
 
 /* import { Carousel } from "flowbite-react";
  */
@@ -23,7 +24,11 @@ export default function FooterBanner() {
             Contact With Us!
           </h2>
           <p className="max-w-md text-gray-600 dark:text-gray-400 lg:text-center reduce_when_too_small hidden_when_too_small">
-            Contact us for your valuable suggestions during <span className='font-semibold text-gray-700 dark:text-gray-300'>the development process.</span> We are happy to answer your questions.
+            Contact us for your valuable suggestions during
+            <Highlighter action="underline" color="#FF9800">
+              <span className='font-semibold text-gray-700 dark:text-gray-300'>the development process.</span>
+            </Highlighter>{" "}
+            We are happy to answer your questions.
           </p>
           <Link to='/contact'>
             <button className="px-4 py-1 sm:py-1.5 text-lg font-semibold text-white bg-gray-500 rounded-lg shadow-md hover:scale-105 transition-transform">
