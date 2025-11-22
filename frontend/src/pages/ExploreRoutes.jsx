@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import RouteFeedCard from '../components/RouteFeedCard';
 import RouteFeedCardSkeleton from '../components/RouteFeedCardSkeleton';
 import FilterPanel from '../components/FilterPanel';
+import { ScrollProgress } from '../components/ui/scroll-progress';
 
 const FEED_BATCH_SIZE = 5;
 const FALLBACK_COVER =
@@ -176,6 +177,7 @@ export default function ExploreRoutes() {
 
     return (
         <div className='min-h-screen bg-slate-50 dark:bg-[rgb(22,26,29)]'>
+            <ScrollProgress className="top-[60px] sm:top-[64px]" />
             <div className='mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8'>
                 <div className='grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)_300px]'>
                     <aside className='space-y-6'>
