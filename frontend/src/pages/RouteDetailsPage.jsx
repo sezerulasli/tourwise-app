@@ -279,7 +279,7 @@ export default function RouteDetailsPage() {
                     )}
                 </div>
             </div>
-            <FooterBanner />
+            <FooterBanner className='from-gray-300 via-gray-100 to-slate-50' velocityContainerClassName='bg-slate-50 dark:bg-[rgb(22,26,29)]' />
         </>
     );
 }

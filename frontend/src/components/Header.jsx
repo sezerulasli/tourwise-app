@@ -81,7 +81,7 @@ export default function Header() {
     return (
         <div className={`sticky top-0 z-[9998] transition-all duration-300 ${isScrolled ? 'backdrop-blur-3xl bg-white/5 dark:bg-[rgb(22,26,29)]/5 shadow-md' : ''} ${path.startsWith('/qr-order') ? 'hidden' : ''}`}>
             <Navbar className={`transition-all duration-300 ${isScrolled ? 'bg-white/70 dark:bg-[rgb(22,26,29)]/70 dark:shadow-2xl' : 'dark:bg-[rgb(22,26,29)]'}`} >
-                <Link to="/" className='self-center whitespace-nowrap text-lg sm:text-2xl font-semibold dark:text-white focus:outline-none focus:ring-0 font-brand' onClick={() => { setSearchTerm(''); setIsOpen(false); }}>
+                <Link to="/" className='self-center whitespace-nowrap text-xl sm:text-2xl font-semibold dark:text-white focus:outline-none focus:ring-0 font-brand' onClick={() => { setSearchTerm(''); setIsOpen(false); }}>
                     <span className='pl-1.5 pr-0.5 mr-0.5 py-1 bg-gradient-to-r from-blue-500 via-teal-400 to-cyan-400 rounded-lg text-white'>Tour</span>
                     <span className=''>wise</span>
                 </Link>

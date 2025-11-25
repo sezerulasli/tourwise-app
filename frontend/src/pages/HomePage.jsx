@@ -121,7 +121,7 @@ export default function HomePage() {
             />
           </div>
 
-          <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56 mb-10">
+          <div className="mx-auto max-w-2xl py-20 sm:py-32 lg:py-56 mb-10">
             <div className="text-center">
               <BlurFade delay={0.25} inView>
                 <h1 className="text-balance text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-7xl">
@@ -143,7 +143,7 @@ export default function HomePage() {
                 </p>
               </BlurFade>
               <BlurFade delay={0.25 * 3} inView>
-                <div className="mt-10 flex items-center justify-center gap-x-6">
+                <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6">
                   <Link to='/explore'>
                     <RainbowButton className='h-12'>Explore public routes</RainbowButton>
                   </Link>

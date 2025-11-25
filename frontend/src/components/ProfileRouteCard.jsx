@@ -20,7 +20,7 @@ export default function ProfileRouteCard({ route }) {
                 <img
                     src={cover}
                     alt={route.title}
-                    className='h-52 w-full object-cover transition duration-300 group-hover:scale-[1.02]'
+                    className='h-52 w-full object-cover '
                     loading='lazy'
                 />
                 {/* Gradient overlay */}

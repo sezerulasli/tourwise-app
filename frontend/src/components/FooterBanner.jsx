@@ -37,10 +37,10 @@ const PLACES_SECOND_ROW = [
   'Nairobi',
   'Auckland',
 ]
-export default function FooterBanner() {
+export default function FooterBanner({ className, velocityContainerClassName }) {
   return (
     <>
-      <div className='flex justify-center items-center h-[200px] text-gray-300 dark:text-[rgb(50,56,61)]'>
+      <div className={`flex justify-center items-center h-[200px] text-gray-300 dark:text-[rgb(50,56,61)] ${velocityContainerClassName ?? 'bg-transparent dark:bg-[rgb(22,26,29)]'}`}>
         <ScrollVelocityContainer className="text-5xl font-bold md:text-6xl">
           <ScrollVelocityRow baseVelocity={1} direction={1}>
             {PLACES_FIRST_ROW.map((place, index) => (
@@ -55,7 +55,7 @@ export default function FooterBanner() {
         </ScrollVelocityContainer>
       </div>
 
-      <div className="relative isolate overflow-hidden bg-gradient-to-t from-gray-300 via-gray-100 to-white dark:from-[rgb(50,56,61)] dark:via-[rgb(32,38,43)] dark:to-[rgb(22,26,29)] px-6 pb-6 pt-10 lg:px-8 shadow-sm">
+      <div className={`relative isolate overflow-hidden bg-gradient-to-t ${className ?? 'from-gray-300 via-gray-100 to-white'} dark:from-[rgb(50,56,61)] dark:via-[rgb(32,38,43)] dark:to-[rgb(22,26,29)] px-6 pb-6 pt-10 lg:px-8 shadow-sm`}>
         {/* Background image */}
         <div className="absolute bottom-0 -right-4 -z-10 transform-gpu overflow-hidden sm:bottom-0">
           <img src={custSer} alt="Background" className="h-60 sm:h-72 object-contain" />

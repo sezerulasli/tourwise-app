@@ -38,29 +38,28 @@ export default function ExploreSidebar({ highlightRoutes = [], suggestedCreators
                     <div className='space-y-4'>
                         {suggestedCreators.length > 0 ? (
                             suggestedCreators.map((creator) => (
-                                <div key={creator.username} className='flex items-center justify-between gap-3'>
-                                    <div className='flex items-center gap-3'>
-                                        <img
-                                            src={creator.profilePicture || 'https://i.pravatar.cc/100?img=12'}
-                                            alt={creator.username}
-                                            className='h-12 w-12 rounded-full object-cover bg-gray-100'
-                                        />
-                                        <div>
-                                            <p className='text-sm font-medium text-slate-900 dark:text-white'>
-                                                {creator.fullName || creator.username}
-                                            </p>
-                                            <p className='text-xs text-slate-500 dark:text-slate-400'>@{creator.username}</p>
-                                            {creator.sampleRoute && (
-                                                <p className='text-xs text-slate-400 mt-1'>{creator.sampleRoute}</p>
-                                            )}
+                                <div key={creator.username} className='flex items-center justify-between gap-3 group'>
+                                    <Link to={`/user/${creator.username}`}>
+                                        <div className='flex items-center gap-3 '>
+                                            <img
+                                                src={creator.profilePicture || 'https://i.pravatar.cc/100?img=12'}
+                                                alt={creator.username}
+                                                className='h-12 w-12 rounded-full object-cover bg-gray-100'
+                                            />
+                                            <div>
+                                                <p className='text-sm font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition'>
+                                                    {creator.fullName || creator.username}
+                                                </p>
+                                                <p className='text-xs text-slate-500 dark:text-slate-400'>@{creator.username}</p>
+                                                {creator.sampleRoute && (
+                                                    <p className='text-xs text-slate-400 mt-1'>{creator.sampleRoute}</p>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <Link
-                                        to={`/user/${creator.username}`}
-                                        className='px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-200 transition'
-                                    >
-                                        Takip Et
                                     </Link>
+                                    <div className='px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-200 transition'>
+                                        Takip Et
+                                    </div>
                                 </div>
                             ))
                         ) : (
@@ -72,4 +71,13 @@ export default function ExploreSidebar({ highlightRoutes = [], suggestedCreators
         </aside>
     );
 }
+
+
+
+
+
+
+
+
+
 
