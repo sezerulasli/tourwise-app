@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { Alert } from 'flowbite-react';
 import { GoogleMap, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
 
+/* const mapLibraries = ['places'];
+ */
 const containerStyle = {
   width: '100%',
   height: '360px',
@@ -32,7 +34,10 @@ const extractStops = (days = []) => {
 };
 
 const ItineraryMap = ({ days = [], height = 360 }) => {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const apiKey =
+    import.meta.env?.VITE_GOOGLE_MAPS_API_KEY ||
+    import.meta.env?.GOOGLE_MAPS_API_KEY ||
+    '';
 
   const stops = useMemo(() => extractStops(days), [days]);
   const path = useMemo(() => stops.map((stop) => stop.position), [stops]);
@@ -40,14 +45,15 @@ const ItineraryMap = ({ days = [], height = 360 }) => {
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey || '',
-    libraries: ['places'],
+    /*     libraries: mapLibraries,
+     */
     id: 'itinerary-map-script',
   });
 
   if (!apiKey) {
     return (
       <Alert color='warning'>
-        Add <span className='font-semibold'>VITE_GOOGLE_MAPS_API_KEY</span> to display the interactive map.
+        Add <span className='font-semibold'>GOOGLE_MAPS_API_KEY</span> to display the interactive map.
       </Alert>
     );
   }

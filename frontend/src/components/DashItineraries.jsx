@@ -57,7 +57,7 @@ export default function DashItineraries() {
     const [generatorOpen, setGeneratorOpen] = useState(false);
     const [generatorForm, setGeneratorForm] = useState({
         prompt: '',
-        durationDays: 4,
+        durationDays: 1,
         travelStyles: '',
         startingCity: '',
         mustInclude: '',
@@ -628,7 +628,7 @@ export default function DashItineraries() {
                                         setGeneratorForm((prev) => ({ ...prev, durationDays: Number(e.target.value) }))
                                     }
                                 >
-                                    {[2, 3, 4, 5, 6, 7, 10, 14].map((day) => (
+                                    {[1, 2, 3, 4, 5, 6, 7, 10, 14].map((day) => (
                                         <option key={day} value={day}>
                                             {day} days
                                         </option>
