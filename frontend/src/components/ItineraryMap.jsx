@@ -1,9 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Alert } from 'flowbite-react';
-import { GoogleMap, Marker, Polyline, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, Marker, DirectionsRenderer, useJsApiLoader } from '@react-google-maps/api';
 
-/* const mapLibraries = ['places'];
- */
 const containerStyle = {
   width: '100%',
   height: '360px',
@@ -40,20 +38,51 @@ const ItineraryMap = ({ days = [], height = 360 }) => {
     '';
 
   const stops = useMemo(() => extractStops(days), [days]);
-  const path = useMemo(() => stops.map((stop) => stop.position), [stops]);
-  const center = stops.length ? stops[Math.floor(stops.length / 2)].position : defaultCenter;
+  const [directions, setDirections] = useState(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: apiKey || '',
-    /*     libraries: mapLibraries,
-     */
     id: 'itinerary-map-script',
   });
+
+  useEffect(() => {
+    if (!isLoaded || stops.length < 2 || !window.google) {
+        setDirections(null);
+        return;
+    }
+
+    const directionsService = new window.google.maps.DirectionsService();
+
+    // Google Maps JS API Directions servisi en fazla 25 waypoint destekler (ücretsiz planda kısıtlı olabilir).
+    // İlk ve son durak harici en fazla 23 waypoint alabiliriz.
+    const origin = stops[0].position;
+    const destination = stops[stops.length - 1].position;
+    
+    // Aradaki duraklar (Waypoints)
+    const waypoints = stops.slice(1, -1).map(stop => ({
+        location: stop.position,
+        stopover: true
+    })).slice(0, 23); // Limit güvenliği
+
+    directionsService.route({
+        origin,
+        destination,
+        waypoints,
+        travelMode: window.google.maps.TravelMode.DRIVING, // Veya WALKING, TRANSIT
+    }, (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK) {
+            setDirections(result);
+        } else {
+            console.error(`Directions request failed: ${status}`);
+        }
+    });
+
+  }, [isLoaded, stops]);
 
   if (!apiKey) {
     return (
       <Alert color='warning'>
-        Add <span className='font-semibold'>GOOGLE_MAPS_API_KEY</span> to display the interactive map.
+        Add <span className='font-semibold'>VITE_GOOGLE_MAPS_API_KEY</span> to your .env file to display the interactive map.
       </Alert>
     );
   }
@@ -78,12 +107,15 @@ const ItineraryMap = ({ days = [], height = 360 }) => {
     );
   }
 
+  // Harita merkezini duraklara göre ayarla (veya directions varsa o otomatik ayarlar)
+  const mapCenter = stops.length ? stops[Math.floor(stops.length / 2)].position : defaultCenter;
+
   return (
     <div className='rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700' style={{ height }}>
       <GoogleMap
         mapContainerStyle={{ ...containerStyle, height }}
-        center={center}
-        zoom={6}
+        center={mapCenter}
+        zoom={stops.length > 1 ? 10 : 12}
         options={{
           disableDefaultUI: true,
           styles: [
@@ -95,22 +127,29 @@ const ItineraryMap = ({ days = [], height = 360 }) => {
           ],
         }}
       >
-        <Polyline
-          path={path}
-          options={{
-            strokeColor: '#6366f1',
-            strokeOpacity: 0.85,
-            strokeWeight: 4,
-          }}
-        />
+        {directions ? (
+            <DirectionsRenderer 
+                directions={directions} 
+                options={{
+                    suppressMarkers: true, // Kendi özel markerlarımızı kullanmak için
+                    polylineOptions: {
+                        strokeColor: '#6366f1',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 5
+                    }
+                }}
+            />
+        ) : null}
+
         {stops.map((stop, index) => (
           <Marker
             key={stop.id || index}
             position={stop.position}
             label={{
-              text: `${stop.dayNumber}`,
+              text: `${index + 1}`,
               color: '#fff',
               fontSize: '12px',
+              fontWeight: 'bold'
             }}
             title={stop.name}
           />
@@ -121,5 +160,3 @@ const ItineraryMap = ({ days = [], height = 360 }) => {
 };
 
 export default ItineraryMap;
-
-

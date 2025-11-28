@@ -35,15 +35,30 @@ const assertOwnership = (itinerary, user) => {
 
 // Helper: Mekan verilerini zenginleştirme
 const enrichItineraryWithPlaces = async (plan) => {
+    console.log(">>> ENRICHMENT PROCESS STARTED <<<");
+    
+    if (!plan.days || !Array.isArray(plan.days)) {
+        console.log("Plan structure invalid or no days found.");
+        return plan;
+    }
+
     const daysPromises = plan.days.map(async (day) => {
+        if (!day.stops || !Array.isArray(day.stops)) return day;
+
         const stopsPromises = day.stops.map(async (stop) => {
-            // Eğer zaten zenginleştirilmişse (geo verisi varsa) atla
-            if (stop.location && stop.location.geo && stop.location.geo.lat) return stop;
+            // Sadece externalId (bizim kaydettiğimiz placeId) varsa atla.
+            // LLM'in uydurduğu veya tahmin ettiği koordinatlara güvenmeyip API'den çekeceğiz.
+            if (stop.externalId) {
+                return stop;
+            }
 
             const cityContext = stop.location?.city || '';
+            console.log(`API Call: Searching place for '${stop.name}' in '${cityContext}'...`);
+            
             const placeData = await searchPlace(stop.name, cityContext);
 
             if (placeData) {
+                console.log(`✅ Found: ${placeData.name} (ID: ${placeData.placeId})`);
                 return {
                     ...stop,
                     name: placeData.name,
@@ -53,11 +68,12 @@ const enrichItineraryWithPlaces = async (plan) => {
                         address: placeData.address,
                         geo: placeData.location,
                     },
-                    externalId: placeData.placeId,
+                    externalId: placeData.placeId, // Frontend Directions API için kritik
                     rating: placeData.rating,
-                    // photoUrl yapısını modelinize göre uyarlayın, şimdilik notes veya resources'a ekleyebiliriz
-                    // resources: [...(stop.resources || []), getPlacePhotoUrl(placeData.photoReference)].filter(Boolean)
+                    // photoUrl veya resources eklenebilir
                 };
+            } else {
+                console.log(`❌ Not Found: ${stop.name}`);
             }
             return stop;
         });
@@ -67,6 +83,7 @@ const enrichItineraryWithPlaces = async (plan) => {
     });
 
     const enrichedDays = await Promise.all(daysPromises);
+    console.log(">>> ENRICHMENT PROCESS FINISHED <<<");
     return { ...plan, days: enrichedDays };
 };
 
@@ -77,11 +94,14 @@ export const generateAiItinerary = async (req, res, next) => {
         }
 
         const { prompt, preferences } = generationSchema.parse(req.body);
+        
+        console.log("1. Requesting plan from LLM...");
         const plan = await requestItineraryPlan(prompt, preferences);
         
-        // Zenginleştirme işlemini burada çağırabilirsiniz
+        console.log("2. Enriching plan with Google Places data...");
         const enrichedPlan = await enrichItineraryWithPlaces(plan);
 
+        console.log("3. Saving itinerary to database...");
         const normalizedPlan = aiItinerarySchema.parse({
             ...enrichedPlan,
             visibility: "private",
@@ -107,8 +127,10 @@ export const generateAiItinerary = async (req, res, next) => {
         });
 
         const saved = await itinerary.save();
+        console.log(`4. Itinerary saved successfully (ID: ${saved._id})`);
         res.status(201).json(saved);
     } catch (error) {
+        console.error("Error in generateAiItinerary:", error);
         next(error);
     }
 };
