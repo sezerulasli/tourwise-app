@@ -1,7 +1,8 @@
-import { Badge } from 'flowbite-react';
+import { Alert, Badge } from 'flowbite-react';
 import React, { useMemo } from 'react';
 import { IoLocationSharp } from "react-icons/io5";
 import CommentSection from './CommentSection';
+import ItineraryMap from './ItineraryMap';
 import '../styles/home.css';
 
 const FALLBACK_COVER = 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=80';
@@ -28,6 +29,55 @@ export default function RouteDetails({ route }) {
         { label: 'Durak', value: `${route?.waypointList?.length || 0} durak` },
         { label: 'Sezon', value: route?.season || 'Tüm yıl' },
     ];
+
+    const mapDays = useMemo(() => {
+        if (Array.isArray(route?.mapDays) && route.mapDays.length > 0) {
+            return route.mapDays;
+        }
+
+        if (!Array.isArray(route?.waypointList) || route.waypointList.length === 0) {
+            return [];
+        }
+
+        const groupedByDay = route.waypointList.reduce((acc, waypoint) => {
+            if (typeof waypoint?.latitude !== 'number' || typeof waypoint?.longitude !== 'number') {
+                return acc;
+            }
+            const dayNumber = waypoint?.day || 1;
+            if (!acc[dayNumber]) {
+                acc[dayNumber] = {
+                    dayNumber,
+                    title: `Gün ${dayNumber}`,
+                    stops: [],
+                };
+            }
+            acc[dayNumber].stops.push({
+                ...waypoint,
+                id: waypoint?._id || `${dayNumber}-${acc[dayNumber].stops.length}`,
+                name: waypoint?.title || 'Durak',
+                location: waypoint?.location
+                    ? waypoint.location
+                    : {
+                        geo: {
+                            lat: waypoint.latitude,
+                            lng: waypoint.longitude,
+                        },
+                    },
+                latitude: waypoint.latitude,
+                longitude: waypoint.longitude,
+            });
+            return acc;
+        }, {});
+
+        return Object.values(groupedByDay)
+            .sort((a, b) => a.dayNumber - b.dayNumber)
+            .map((day) => ({
+                ...day,
+                stops: day.stops.sort((a, b) => (a.order || 0) - (b.order || 0)),
+            }));
+    }, [route?.mapDays, route?.waypointList]);
+
+    console.log(route);
 
     return (
         <div className='space-y-8'>
@@ -76,6 +126,24 @@ export default function RouteDetails({ route }) {
                             </div>
                         )}
                     </div>
+                </div>
+            </div>
+
+            <div className='rounded-3xl overflow-hidden border border-slate-100 dark:border-gray-700 bg-white dark:bg-[rgb(32,38,43)] shadow-sm'>
+                <div className='p-6 border-b border-slate-100 dark:border-gray-700'>
+                    <h2 className='text-2xl font-semibold text-slate-900 dark:text-white'>Rota Haritası</h2>
+                    <p className='text-sm text-slate-500 dark:text-slate-300 mt-1'>
+                        Durak koordinatlarına göre otomatik olarak oluşturulan güzergah.
+                    </p>
+                </div>
+                <div className='p-6 bg-slate-50/60 dark:bg-[rgb(22,26,29)]'>
+                    {mapDays.length > 0 ? (
+                        <ItineraryMap days={mapDays} height={420} />
+                    ) : (
+                        <Alert color='info'>
+                            Bu rota için harita oluşturmak üzere koordinat bilgisi içeren durak ekleyin.
+                        </Alert>
+                    )}
                 </div>
             </div>
 

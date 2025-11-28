@@ -30,3 +30,4 @@ router.post("/itineraries/:id/share", verifyToken, shareItinerary);
 router.post("/chatbot", verifyToken, askItineraryChatbot);
 
 export default router;
+

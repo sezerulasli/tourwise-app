@@ -294,7 +294,7 @@ export default function DashItineraries() {
 
         // Deep copy for optimistic update
         const newItinerary = JSON.parse(JSON.stringify(selected));
-        
+
         const sourceDay = newItinerary.days.find(d => d.dayNumber === sourceDayNum);
         const destDay = newItinerary.days.find(d => d.dayNumber === destDayNum);
 
@@ -310,20 +310,20 @@ export default function DashItineraries() {
             let body = {};
 
             if (sourceDayNum === destDayNum) {
-                 url = `/api/ai/itineraries/${selected._id}/reorder`;
-                 body = {
+                url = `/api/ai/itineraries/${selected._id}/reorder`;
+                body = {
                     dayNumber: sourceDayNum,
                     oldIndex: source.index,
                     newIndex: destination.index
-                 };
+                };
             } else {
-                 url = `/api/ai/itineraries/${selected._id}/move`;
-                 body = {
+                url = `/api/ai/itineraries/${selected._id}/move`;
+                body = {
                     fromDay: sourceDayNum,
                     toDay: destDayNum,
                     fromIndex: source.index,
                     toIndex: destination.index
-                 };
+                };
             }
 
             const res = await fetch(url, {
@@ -334,10 +334,10 @@ export default function DashItineraries() {
             });
 
             if (!res.ok) {
-                 // Revert on error by reloading
-                 fetchItineraryDetail(selected._id);
-                 const data = await res.json();
-                 setDetailError(data.message || "Failed to update order");
+                // Revert on error by reloading
+                fetchItineraryDetail(selected._id);
+                const data = await res.json();
+                setDetailError(data.message || "Failed to update order");
             }
         } catch (error) {
             console.error(error);
@@ -390,11 +390,10 @@ export default function DashItineraries() {
                             <Card
                                 key={item._id}
                                 onClick={() => setSelectedId(item._id)}
-                                className={`cursor-pointer transition-all ${
-                                    selectedId === item._id
-                                        ? 'ring-2 ring-purple-500'
-                                        : 'hover:ring-1 hover:ring-gray-200'
-                                }`}
+                                className={`cursor-pointer transition-all ${selectedId === item._id
+                                    ? 'ring-2 ring-purple-500'
+                                    : 'hover:ring-1 hover:ring-gray-200'
+                                    }`}
                             >
                                 <div className='flex items-start justify-between gap-2'>
                                     <div>
@@ -544,7 +543,7 @@ export default function DashItineraries() {
                                             </div>
                                             <Badge color='purple'>{day.stops?.length || 0} stops</Badge>
                                         </div>
-                                        
+
                                         <Droppable droppableId={`day-${day.dayNumber}`}>
                                             {(provided) => (
                                                 <div
@@ -553,9 +552,9 @@ export default function DashItineraries() {
                                                     className='mt-4 space-y-3 min-h-[20px]'
                                                 >
                                                     {day.stops?.map((stop, index) => (
-                                                        <Draggable 
-                                                            key={stop._id || `${day.dayNumber}-${index}-${stop.name}`} 
-                                                            draggableId={stop._id || `${day.dayNumber}-${index}-${stop.name}`} 
+                                                        <Draggable
+                                                            key={stop._id || `${day.dayNumber}-${index}-${stop.name}`}
+                                                            draggableId={stop._id || `${day.dayNumber}-${index}-${stop.name}`}
                                                             index={index}
                                                         >
                                                             {(provided, snapshot) => (
@@ -567,13 +566,16 @@ export default function DashItineraries() {
                                                                     style={{ ...provided.draggableProps.style }}
                                                                 >
                                                                     <div className='flex items-start justify-between gap-2'>
-                                                                        <div>
-                                                                            <p className='font-medium text-gray-900 dark:text-gray-50'>
-                                                                                {stop.name}
-                                                                            </p>
-                                                                            <p className='text-xs text-gray-500'>
-                                                                                {stop.location?.city || stop.location?.address || '—'}
-                                                                            </p>
+                                                                        <div className='flex items-center justify-center gap-2'>
+                                                                            <span className='text-xs text-white bg-red-600 dark:bg-gray-700 rounded-full px-2.5 py-1'>{index + 1}</span>
+                                                                            <div className='flex flex-col gap-0'>
+                                                                                <p className='font-medium text-gray-900 dark:text-gray-50'>
+                                                                                    {stop.name}
+                                                                                </p>
+                                                                                <p className='text-xs text-gray-500'>
+                                                                                    {stop.location?.city || stop.location?.address || '—'}
+                                                                                </p>
+                                                                            </div>
                                                                         </div>
                                                                         <Button
                                                                             size='xs'
