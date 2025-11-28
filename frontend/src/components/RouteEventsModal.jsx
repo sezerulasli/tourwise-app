@@ -11,7 +11,7 @@ const RouteEventsModal = ({ isOpen, onClose, routeTitle, routeId, initialMode = 
     const [events, setEvents] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // --- KULLANICI STATE'İ (LocalStorage'dan gelecek) ---
+    // --- KULLANICI STATE'İ (LocalStorage - Redux Persist'ten gelecek) ---
     const [currentUser, setCurrentUser] = useState(null);
 
     // --- CHAT STATE'LERİ ---
@@ -26,20 +26,23 @@ const RouteEventsModal = ({ isOpen, onClose, routeTitle, routeId, initialMode = 
         maxParticipants: 10
     });
 
+    // Açılış modunu ayarla (Liste veya Oluşturma)
     useEffect(() => {
         setView(initialMode);
     }, [initialMode]);
 
-    // --- 1. KULLANICIYI LOCALSTORAGE'DAN ÇEKME ---
+    // --- 1. KULLANICIYI LOCALSTORAGE'DAN ÇEKME (Redux Persist Çözümleme) ---
     useEffect(() => {
         try {
             const persistRoot = localStorage.getItem("persist:root");
             if (persistRoot) {
                 const parsedRoot = JSON.parse(persistRoot);
+                // Redux'ta user 'string' olarak saklanıyor olabilir, onu da parse et
                 if (parsedRoot.user) {
                     const userState = JSON.parse(parsedRoot.user);
                     if (userState.currentUser) {
                         setCurrentUser(userState.currentUser);
+                        console.log("✅ Aktif Kullanıcı:", userState.currentUser.username);
                     }
                 }
             }
@@ -48,21 +51,21 @@ const RouteEventsModal = ({ isOpen, onClose, routeTitle, routeId, initialMode = 
         }
     }, []);
 
-    // --- 2. VERİ ÇEKME ---
+    // --- 2. ETKİNLİKLERİ ÇEKME ---
     useEffect(() => {
         if (isOpen && view === 'list') {
             fetchEvents();
         }
     }, [isOpen, view, routeId]);
 
-    // --- 3. CHAT MESAJLARI ---
+    // --- 3. CHAT MESAJLARINI ÇEKME ---
     useEffect(() => {
         if (view === 'chat' && selectedEvent) {
             fetchMessages(selectedEvent._id);
         }
     }, [view, selectedEvent]);
 
-    // Mesaj gelince kaydır
+    // Mesaj geldiğinde otomatik aşağı kaydır
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -70,12 +73,25 @@ const RouteEventsModal = ({ isOpen, onClose, routeTitle, routeId, initialMode = 
     const fetchEvents = async () => {
         try {
             setIsLoading(true);
+            console.log(`📡 Veri çekiliyor: ${API_URL}/${routeId}`); // Log 1
+            
             const res = await fetch(`${API_URL}/${routeId}`);
             if (!res.ok) throw new Error('Veri çekilemedi');
+            
             const data = await res.json();
-            setEvents(data);
+            console.log("📦 Frontend'e Gelen Veri:", data); // Log 2: Burayı kontrol et
+
+            // Güvenlik Kontrolü: Gelen veri bir DİZİ (Array) mi?
+            if (Array.isArray(data)) {
+                setEvents(data);
+            } else {
+                console.error("❌ HATA: Beklenen veri bir dizi değil!", data);
+                // Eğer backend { events: [...] } şeklinde dönüyorsa data.events deneyebilirsin
+                // Şimdilik boş set ediyoruz ki patlamasın
+                setEvents([]); 
+            }
         } catch (error) {
-            console.error(error);
+            console.error("Fetch Hatası:", error);
         } finally {
             setIsLoading(false);
         }
@@ -96,7 +112,7 @@ const RouteEventsModal = ({ isOpen, onClose, routeTitle, routeId, initialMode = 
     // --- YENİ: ETKİNLİĞE KATILMA FONKSİYONU ---
     const handleJoinEvent = async (eventId) => {
         if (!currentUser) {
-            alert("Etkinliğe katılmak için giriş yapmalısınız.");
+            alert("Etkinliğe katılmak için lütfen giriş yapınız.");
             return;
         }
 
@@ -108,7 +124,7 @@ const RouteEventsModal = ({ isOpen, onClose, routeTitle, routeId, initialMode = 
             });
 
             if (res.ok) {
-                // Başarılı olursa listeyi yenile (Katılımcı sayısı artsın diye)
+                // Başarılı olursa listeyi yenile (Katılımcı sayısı ve buton durumu güncellensin)
                 fetchEvents(); 
                 alert("Etkinliğe başarıyla katıldınız! 🎉");
             } else {
@@ -122,29 +138,49 @@ const RouteEventsModal = ({ isOpen, onClose, routeTitle, routeId, initialMode = 
 
     const handleCreateEvent = async (e) => {
         e.preventDefault();
+
+        // 1. Giriş Kontrolü
+        if (!currentUser) {
+            alert("Etkinlik oluşturmak için lütfen giriş yapınız.");
+            return;
+        }
+
         try {
             const res = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...formData, routeId })
+                // 2. Kullanıcı ID'sini de gönderiyoruz (organizerId/userId)
+                body: JSON.stringify({ 
+                    ...formData, 
+                    routeId,
+                    organizerId: currentUser._id,
+                    userId: currentUser._id 
+                })
             });
 
             if (res.ok) {
                 setView('list');
                 fetchEvents();
+                // Formu temizle
+                setFormData({ title: '', date: '', time: '', maxParticipants: 10 });
+                alert("Etkinlik başarıyla oluşturuldu! 🎉");
             } else {
-                alert("Hata oluştu");
+                // 3. Detaylı Hata Mesajı
+                const errData = await res.json();
+                alert(`Hata: ${errData.message || "Etkinlik oluşturulamadı"}`);
             }
         } catch (error) {
-            console.error(error);
+            console.error("Etkinlik oluşturma hatası:", error);
+            alert("Sunucu ile iletişim hatası.");
         }
     };
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!msgInput.trim()) return;
+        
         if (!currentUser) {
-            alert("Giriş yapmalısınız.");
+            alert("Mesaj göndermek için giriş yapmalısınız.");
             return;
         }
 
@@ -164,8 +200,8 @@ const RouteEventsModal = ({ isOpen, onClose, routeTitle, routeId, initialMode = 
 
             if (res.ok) {
                 const savedMsg = await res.json();
-                setMessages([...messages, savedMsg]);
-                setMsgInput('');
+                setMessages([...messages, savedMsg]); // Listeye anında ekle
+                setMsgInput(''); // Inputu temizle
             }
         } catch (error) {
             console.error("Mesaj gönderilemedi:", error);
@@ -212,9 +248,9 @@ const RouteEventsModal = ({ isOpen, onClose, routeTitle, routeId, initialMode = 
                                     <button onClick={() => setView('create')} className="mt-2 text-indigo-600 font-medium text-sm">İlk sen oluştur</button>
                                 </div>
                             ) : events.map(evt => {
-                                // Kullanıcı katılmış mı?
+                                // Kullanıcı katılmış mı kontrolü
                                 const isJoined = currentUser && evt.participants?.includes(currentUser._id);
-                                // Kontenjan dolu mu?
+                                // Kontenjan dolu mu kontrolü
                                 const isFull = (evt.participants?.length || 0) >= evt.maxParticipants;
 
                                 return (
